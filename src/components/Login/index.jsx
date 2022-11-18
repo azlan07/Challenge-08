@@ -1,5 +1,6 @@
 import { useState, useEffect, React } from "react";
 import { Navigate } from "react-router-dom";
+import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 
 async function doLogin({ email, password }) {
     // Gunakan endpoint-mu sendiri
@@ -17,10 +18,22 @@ async function doLogin({ email, password }) {
     return data.token;
 }
 
+async function doLoginWithGoogle(token) {
+    // Sesuaikan endpoint
+    const response = await fetch("https://challenge-06-production.up.railway.app/", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            token
+        }),
+    });
+    const data = await response.json();
+    return data.token;
+}
+
 function Login() {
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [isLoading, setIsLoading] = useState("");
     const [isLoggedIn, setIsLoggedIn] = useState("");
     const token = localStorage.getItem("token");
 
@@ -28,44 +41,49 @@ function Login() {
         setIsLoggedIn(!!token);
     }, [token]);
 
-    function handleSubmit(e) {
-        setIsLoading(true);
-        e.preventDefault();
-        doLogin({ email, password })
-            .then((token) => localStorage.setItem("token", token))
+    const haldleSuccessGoogle = (response) => {
+        console.log(response);
+        console.log(response.credential);
+        if(response.credential) {
+          doLoginWithGoogle(response.credential)
+            .then((token) => {
+                localStorage.setItem("token", token);
+                setIsLoggedIn(token);
+              })
             .catch((err) => console.log(err.message))
-            .finally(() => setIsLoading(false));
-    }
+        }
+      }
+    
+      const haldleFailureGoogle = (response) => {
+        console.log(response);
+        alert(response);
+      }
 
     return (
         !isLoggedIn ? (
-            <form className="container" onSubmit={handleSubmit} style={{ width: "430px", height: "415px", backgroundColor: "#f1f3ff"}}>
+            <form className="container"style={{ width: "430px", height: "155px", backgroundColor: "#f1f3ff"}}>
                 <h1 style={{textAlign: "center"}}>
                     Please Login
                 </h1>
 
-                {/* <!-- Email input --> */}
-                <div className="form-outline mb-4">
-                    <label className="form-label" htmlFor="email">Email address</label>
-                    <input type="email" id="email" className="form-control" onChange={(e) => setEmail(e.target.value)} />
-                </div>
-
-                {/* <!-- Password input --> */}
-                <div className="form-outline mb-4">
-                    <label className="form-label" htmlFor="password">Password</label>
-                    <input type="password" id="password" className="form-control" onChange={(e) => setPassword(e.target.value)} />
-                </div>
+                <p className="text-center">
+                    with your google account
+                </p>
 
                 {/* <!-- Submit button --> */}
                 <div className="row">
-                        <div style={{textAlign: "center"}}>
-                            <button type="submit" className="btn btn-primary btn-block mb-4">
-                            SIGN IN
-                            </button>
+                        <div className="mx-5 px-5" style={{textAlign: "center"}}>
+                        <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}>
+                            <GoogleLogin
+                                onSuccess={credentialResponse => {
+                                    haldleSuccessGoogle(credentialResponse)
+                                }}
+                                onError={() => {
+                                    haldleFailureGoogle("error Login")
+                                }}
+                            />
+                        </GoogleOAuthProvider>
                         </div>
-                        <p style={{textAlign: "center"}}>
-                            Or
-                        </p>
                 </div>
                 
                 <br></br>
