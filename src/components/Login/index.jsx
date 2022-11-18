@@ -72,7 +72,7 @@ function Login() {
 
                 {/* <!-- Submit button --> */}
                 <div className="row">
-                        <div className="mx-5 px-5" style={{textAlign: "center"}}>
+                        <div className="mx-5 px-5 py" style={{textAlign: "center"}}>
                         <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}>
                             <GoogleLogin
                                 onSuccess={credentialResponse => {
